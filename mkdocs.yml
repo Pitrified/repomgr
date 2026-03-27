@@ -76,6 +76,7 @@ nav:
   - Home: index.md
   - Getting Started: getting-started.md
   - Guides:
+      - User Guide: guides/user-guide.md
       - UV Package Manager: guides/uv.md
       - Pre-commit Hooks: guides/pre_commit.md
       - Params / Config Pattern: guides/params_config.md

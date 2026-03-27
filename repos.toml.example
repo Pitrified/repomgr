@@ -1,0 +1,77 @@
+# repos.toml.example - annotated configuration for repomgr
+#
+# Copy this file to repos.toml and edit to match your setup.
+# All paths support ~ expansion.
+#
+# Run: repomgr status    (verify repomgr can see your repos)
+
+# ---------------------------------------------------------------------------
+# [settings] - optional global defaults
+# ---------------------------------------------------------------------------
+
+[settings]
+
+# Root directory where repos are cloned by default.
+# Each repo lands at base_path/<name> unless a per-repo path is set.
+base_path = "~/repos"
+
+# Test command used when a repo does not define its own test_cmd.
+default_test_cmd = "uv run pytest"
+
+# Path to the generated state file (JSON). Relative paths are resolved
+# relative to the directory that contains this repos.toml file.
+state_file = "./repos.state.json"
+
+
+# ---------------------------------------------------------------------------
+# [[repo]] - one entry per tracked repository
+# ---------------------------------------------------------------------------
+# Required fields: name, remote, roles
+# Optional: auto_merge, path, test_cmd
+
+# --- Source repo: produces versioned tags consumed by others ---------------
+
+[[repo]]
+name   = "my-lib"
+remote = "git@github.com:you/my-lib.git"
+
+# "source" means this repo is a dependency of others.
+# "consumer" means this repo depends on other tracked repos via git deps.
+# A repo can have both: roles = ["source", "consumer"]
+roles  = ["source"]
+
+# auto_merge = true: after a successful dep-update branch, repomgr will
+# fast-forward merge to main and push automatically.
+# auto_merge = false (default): the update branch is left for manual review.
+auto_merge = true
+
+
+# --- Consumer repo: depends on my-lib via a git-sourced dep ----------------
+
+[[repo]]
+name   = "my-app"
+remote = "git@github.com:you/my-app.git"
+roles  = ["consumer"]
+
+# Per-repo test command overrides default_test_cmd.
+test_cmd = "uv run pytest -x --tb=short"
+
+
+# --- Repo with an explicit local path override -----------------------------
+
+[[repo]]
+name   = "legacy-service"
+remote = "git@github.com:you/legacy-service.git"
+roles  = ["consumer"]
+
+# Set path when the clone lives outside base_path, or under a different name.
+path   = "~/projects/legacy"
+
+
+# --- Source + consumer: contributes to others and has its own git deps -----
+
+[[repo]]
+name   = "mid-layer"
+remote = "git@github.com:you/mid-layer.git"
+roles  = ["source", "consumer"]
+auto_merge = true
