@@ -84,6 +84,7 @@ nav:
       - Repos Config: library/repos_config.md
       - Dependency Graph: library/deps.md
       - Manager: library/manager.md
+      - Update Flow: library/update.md
   - API Reference: reference/
   - Contributing: contributing.md
 
