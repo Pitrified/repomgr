@@ -1,6 +1,6 @@
 # repomgr - Implementation Tracker
 
-Last updated: 2026-03-27 (git.py done)
+Last updated: 2026-03-27 (health.py done)
 
 ## Phase overview
 
@@ -8,7 +8,7 @@ Last updated: 2026-03-27 (git.py done)
 |-------|--------|-------------|--------|-------|
 | 1a | `config/repos_config.py` | `02-repos-config.md` | DONE | TOML schema + Pydantic models + loader; 21 tests |
 | 1b | `state.py` | `03-state.md` | DONE | StateStore JSON connector + RepoState; 13 tests |
-| 1c | `health.py` | `06-health.md` | NOT STARTED | Pure scoring function, no deps |
+| 1c | `health.py` | `06-health.md` | DONE | Traffic-light scoring; 17 tests |
 | 2 | `git.py` | `04-git.md` | DONE | Subprocess layer, all git operations; 27 tests |
 | 3 | `deps.py` | `05-deps.md` | NOT STARTED | Dep graph, tag resolution, pyproject editing |
 | 4 | `renderer.py` | `07-renderer.md` | NOT STARTED | Rich terminal formatting |
