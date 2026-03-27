@@ -1,13 +1,13 @@
 # repomgr - Implementation Tracker
 
-Last updated: 2026-03-27
+Last updated: 2026-03-27 (state.py done)
 
 ## Phase overview
 
 | Phase | Module | Detail file | Status | Notes |
 |-------|--------|-------------|--------|-------|
 | 1a | `config/repos_config.py` | `02-repos-config.md` | DONE | TOML schema + Pydantic models + loader; 21 tests |
-| 1b | `state.py` | `03-state.md` | NOT STARTED | StateStore JSON connector + RepoState |
+| 1b | `state.py` | `03-state.md` | DONE | StateStore JSON connector + RepoState; 13 tests |
 | 1c | `health.py` | `06-health.md` | NOT STARTED | Pure scoring function, no deps |
 | 2 | `git.py` | `04-git.md` | NOT STARTED | Subprocess layer, all git operations |
 | 3 | `deps.py` | `05-deps.md` | NOT STARTED | Dep graph, tag resolution, pyproject editing |
