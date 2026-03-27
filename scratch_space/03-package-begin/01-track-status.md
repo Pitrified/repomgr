@@ -1,6 +1,6 @@
 # repomgr - Implementation Tracker
 
-Last updated: 2026-03-27 (health.py done)
+Last updated: 2026-03-27 (deps.py done)
 
 ## Phase overview
 
@@ -10,7 +10,7 @@ Last updated: 2026-03-27 (health.py done)
 | 1b | `state.py` | `03-state.md` | DONE | StateStore JSON connector + RepoState; 13 tests |
 | 1c | `health.py` | `06-health.md` | DONE | Traffic-light scoring; 17 tests |
 | 2 | `git.py` | `04-git.md` | DONE | Subprocess layer, all git operations; 27 tests |
-| 3 | `deps.py` | `05-deps.md` | NOT STARTED | Dep graph, tag resolution, pyproject editing |
+| 3 | `deps.py` | `05-deps.md` | DONE | Dep graph, tag resolution, pyproject editing; 21 tests |
 | 4 | `renderer.py` | `07-renderer.md` | NOT STARTED | Rich terminal formatting |
 | 5a | `manager.py` | `08-manager.md` | NOT STARTED | Fetch, clone, status, stale branches |
 | 5b | `update.py` | `09-update.md` | NOT STARTED | Dep update flow |

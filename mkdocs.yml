@@ -82,6 +82,7 @@ nav:
       - Webapp setup: guides/webapp_setup.md
   - Library:
       - Repos Config: library/repos_config.md
+      - Dependency Graph: library/deps.md
   - API Reference: reference/
   - Contributing: contributing.md
 
