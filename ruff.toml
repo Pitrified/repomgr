@@ -18,6 +18,9 @@ ignore = [
 ]
 
 [lint.per-file-ignores]
+"src/repomgr/cli.py" = [
+    "FBT002", # Typer boolean CLI options require `= False` defaults
+]
 "*.ipynb" = [
     "ERA001", # Found commented-out code
     "F401", # unused import

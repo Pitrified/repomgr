@@ -1,6 +1,6 @@
 # repomgr - Implementation Tracker
 
-Last updated: 2026-03-27 (update.py done)
+Last updated: 2026-03-27 (cli.py done)
 
 ## Phase overview
 
@@ -14,7 +14,7 @@ Last updated: 2026-03-27 (update.py done)
 | 4 | `renderer.py` | `07-renderer.md` | DONE | Rich terminal formatting; 19 tests |
 | 5a | `manager.py` | `08-manager.md` | DONE | Fetch, clone, status, stale branches; 19 tests |
 | 5b | `update.py` | `09-update.md` | DONE | Dep update flow; 21 tests |
-| 6 | `cli.py` | `10-cli.md` | NOT STARTED | Typer CLI entry point |
+| 6 | `cli.py` | `10-cli.md` | DONE | Typer CLI entry point; 13 tests |
 | 7 | GitHub Auth | `11-github-auth.md` | DEFERRED | GitHub App tokens (not needed for v1) |
 
 ## Scaffold status (already complete)
