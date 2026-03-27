@@ -1,6 +1,6 @@
 # repomgr - Implementation Tracker
 
-Last updated: 2026-03-27 (deps.py done)
+Last updated: 2026-03-27 (renderer.py done)
 
 ## Phase overview
 
@@ -11,7 +11,7 @@ Last updated: 2026-03-27 (deps.py done)
 | 1c | `health.py` | `06-health.md` | DONE | Traffic-light scoring; 17 tests |
 | 2 | `git.py` | `04-git.md` | DONE | Subprocess layer, all git operations; 27 tests |
 | 3 | `deps.py` | `05-deps.md` | DONE | Dep graph, tag resolution, pyproject editing; 21 tests |
-| 4 | `renderer.py` | `07-renderer.md` | NOT STARTED | Rich terminal formatting |
+| 4 | `renderer.py` | `07-renderer.md` | DONE | Rich terminal formatting; 19 tests |
 | 5a | `manager.py` | `08-manager.md` | NOT STARTED | Fetch, clone, status, stale branches |
 | 5b | `update.py` | `09-update.md` | NOT STARTED | Dep update flow |
 | 6 | `cli.py` | `10-cli.md` | NOT STARTED | Typer CLI entry point |
