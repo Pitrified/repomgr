@@ -39,6 +39,8 @@ Pass the result into `StatusRow` instead of `state` directly, or add it as a sep
 
 No state-file write is needed: this is purely a read-time enrichment.
 
+**e1 - last fetch** (manager.py): Added `_enrich_fetch_time()` helper that reads FETCH_HEAD mtime as a fallback when `state.last_fetch_at` is `None`. Called in `status_all()` before the `StatusRow` is built.
+
 ---
 
 ## e2: tracked git deps
@@ -170,3 +172,8 @@ Add tests in `tests/test_deps.py` covering:
 - git dep pointing to an untracked repo (must be silently skipped)
 
 Use `media-downloader`'s actual `pyproject.toml` as the reference fixture.
+
+**e2 - tracked git deps** (deps.py):
+- **Bug A**: `parse_git_deps` now also flattens all `project.optional-dependencies` groups into the dep lines list.
+- **Bug B**: `_GIT_DEP_PATTERN` regex now uses `(?:\.git)?@` - the .git suffix is optional.
+- **Bug C**: Extras char class changed from `[\w,]+` to `[\w,-]+` - hyphens (e.g. `[faster-whisper]`) are now accepted.

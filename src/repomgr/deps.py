@@ -55,18 +55,19 @@ class GitDepNotFoundError(Exception):
 # ---------------------------------------------------------------------------
 
 # Regex to parse a git-sourced dependency line of the form:
-#   <name>[<extras>] @ git+ssh://git@<host>/<owner>/<repo>.git@<tag>
+#   <name>[<extras>] @ git+ssh://git@<host>/<owner>/<repo>[@<tag>]
 # or
-#   <name>[<extras>] @ git+https://<host>/<owner>/<repo>.git@<tag>
+#   <name>[<extras>] @ git+https://<host>/<owner>/<repo>[@<tag>]
+# The .git suffix and extras hyphen are both optional.
 _GIT_DEP_PATTERN = re.compile(
     r"^(?P<name>[\w-]+)"
-    r"(?P<extras>\[[\w,]+\])?"
+    r"(?P<extras>\[[\w,-]+\])?"
     r"\s*@\s*git\+"
     r"(?:ssh://git@|https://)"
     r"[\w.-]+"  # host
     r"/[\w.-]+"  # owner
     r"/(?P<repo>[\w.-]+)"
-    r"\.git@"
+    r"(?:\.git)?@"
     r"(?P<tag>[\w.+-]+)"
     r"\s*$",
     re.ASCII,
@@ -119,7 +120,11 @@ def parse_git_deps(
         List of ``GitDep`` for each tracked git dep found.
     """
     raw = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
-    dep_lines: list[str] = raw.get("project", {}).get("dependencies", [])
+    project = raw.get("project", {})
+    dep_lines: list[str] = list(project.get("dependencies", []))
+    opt_deps: dict[str, list[str]] = project.get("optional-dependencies", {})
+    for group_lines in opt_deps.values():
+        dep_lines.extend(group_lines)
 
     result: list[GitDep] = []
     for line in dep_lines:

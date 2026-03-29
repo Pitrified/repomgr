@@ -11,8 +11,10 @@ Pattern rules:
     human-facing flow.
 """
 
+from copy import copy
 from datetime import UTC
 from datetime import datetime
+from pathlib import Path
 
 from loguru import logger as lg
 import typer
@@ -30,6 +32,7 @@ from repomgr.renderer import render_clone_result
 from repomgr.renderer import render_fetch_result
 from repomgr.renderer import render_stale_branches
 from repomgr.renderer import render_status
+from repomgr.state import RepoState
 from repomgr.state import StateStore
 
 # ---------------------------------------------------------------------------
@@ -159,6 +162,7 @@ def status_all(
             continue
 
         try:
+            state = _enrich_fetch_time(state, repo.path)
             branch = git.current_branch(repo.path)
             clean = git.is_clean(repo.path)
             behind = git.is_behind_remote(repo.path)
@@ -245,6 +249,36 @@ def stale_branches(config: RepomgrTomlConfig) -> None:
 # ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
+
+
+def _enrich_fetch_time(state: RepoState, repo_path: Path) -> RepoState:
+    """Return *state* with ``last_fetch_at`` filled from ``.git/FETCH_HEAD`` mtime.
+
+    When ``last_fetch_at`` is already set (written by ``repomgr fetch``), the
+    state is returned unchanged.  Otherwise the mtime of ``.git/FETCH_HEAD``
+    is used as a best-effort fallback: git updates that file on every fetch
+    regardless of which tool triggered it.
+
+    The original state object is never mutated; a shallow copy is returned when
+    the fallback fires so callers that compare object identity are not surprised.
+
+    Args:
+        state: Persisted repo state (may have ``last_fetch_at=None``).
+        repo_path: Root directory of the local clone.
+
+    Returns:
+        The same ``state`` instance when ``last_fetch_at`` is already set,
+        otherwise a copy with ``last_fetch_at`` filled from the file mtime
+        (or still ``None`` when ``.git/FETCH_HEAD`` does not exist).
+    """
+    if state.last_fetch_at is not None:
+        return state
+    fetch_head = repo_path / ".git" / "FETCH_HEAD"
+    if not fetch_head.exists():
+        return state
+    enriched = copy(state)
+    enriched.last_fetch_at = datetime.fromtimestamp(fetch_head.stat().st_mtime, tz=UTC)
+    return enriched
 
 
 def _gather_deps_behind(
