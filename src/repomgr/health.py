@@ -65,6 +65,7 @@ class LiveRepoStatus:
     is_behind: bool = False
     is_ahead: bool = False
     has_diverged: bool = False
+    has_unreleased_commits: bool = False
 
 
 @dataclass
@@ -116,6 +117,9 @@ def _collect_yellow_reasons(
 
     if live.is_ahead:
         reasons.append("ahead of origin/main (unpushed commits)")
+
+    if live.has_unreleased_commits:
+        reasons.append("unreleased commits since last tag")
 
     if state.last_test_passed is False:
         reasons.append("last test run failed")

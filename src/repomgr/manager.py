@@ -6,7 +6,8 @@ health-status dashboard, and manage stale branches.
 
 Pattern rules:
     All git errors are caught per repo so one failing repo does not abort the
-    entire batch.  ``status_all`` is read-only - it never writes state.
+    entire batch.  ``status_all`` is read-only except for auto-clearing stale
+    test-failure state when it detects the repo is back on main.
     Interactive prompting in ``stale_branches`` is acceptable because it is a
     human-facing flow.
 """
@@ -169,6 +170,13 @@ def status_all(
             ahead = git.is_ahead_of_remote(repo.path)
             diverged = behind and ahead
 
+            unreleased = False
+            if Role.SOURCE in repo.roles:
+                try:
+                    unreleased = git.commits_after_last_tag(repo.path) > 0
+                except GitError:
+                    lg.debug("could not check tags for {}", repo.name)
+
             live = LiveRepoStatus(
                 repo_exists=True,
                 branch=branch,
@@ -176,7 +184,22 @@ def status_all(
                 is_behind=behind,
                 is_ahead=ahead,
                 has_diverged=diverged,
+                has_unreleased_commits=unreleased,
             )
+
+            # Auto-clear stale test-failure state: if the update flow left
+            # the repo on a dep branch when tests failed, but the user has
+            # since resolved the situation manually and is back on main with
+            # a clean working tree, clear the failure record so status no
+            # longer shows a false YELLOW.
+            if (
+                state.last_update_result == "failed_tests"
+                and branch == "main"
+                and clean
+            ):
+                state.last_test_passed = None
+                state.last_update_result = None
+                store.save(state)
 
             deps_behind: list[str] = []
             if Role.CONSUMER in repo.roles:

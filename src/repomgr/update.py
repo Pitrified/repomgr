@@ -65,7 +65,7 @@ def _run_uv_sync(cwd: Path) -> bool:
         ``True`` when the command exits with code zero.
     """
     result = subprocess.run(
-        ["uv", "sync"],  # noqa: S607
+        ["uv", "sync", "--all-extras", "--all-groups"],  # noqa: S607
         cwd=cwd,
         capture_output=True,
         text=True,

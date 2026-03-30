@@ -360,6 +360,30 @@ def list_tags(cwd: Path) -> list[str]:
     return [t for t in result.stdout.splitlines() if t.strip()]
 
 
+def commits_after_last_tag(cwd: Path) -> int:
+    """Return the number of commits on HEAD that are not reachable from the latest tag.
+
+    When the repository has no tags yet, returns ``0`` so untagged repos are
+    not falsely marked as stale.
+
+    Args:
+        cwd: Root of the git repository.
+
+    Returns:
+        Count of commits between the latest tag and HEAD, or ``0`` when there
+        are no tags.
+
+    Raises:
+        GitError: If the directory is not a git repository.
+    """
+    tags = list_tags(cwd)
+    if not tags:
+        return 0
+    latest_tag = tags[0]
+    result = _run_git(cwd, "rev-list", "--count", f"{latest_tag}..HEAD")
+    return int(result.stdout.strip())
+
+
 # ---------------------------------------------------------------------------
 # Branches
 # ---------------------------------------------------------------------------
