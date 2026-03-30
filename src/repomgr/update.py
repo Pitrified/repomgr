@@ -261,6 +261,7 @@ def _execute_update(
     tests_passed: bool | None = None
 
     if not no_tests:
+        lg.info("{}: running tests with '{}'", repo_config.name, repo_config.test_cmd)
         tests_passed = _run_tests(cwd, repo_config.test_cmd)
         test_time = datetime.now(tz=UTC)
 
