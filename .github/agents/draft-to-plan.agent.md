@@ -1,5 +1,5 @@
 ---
-name: draft-to-plan
+name: draft-to-plan-old
 description: Turn a user-written draft (feature, bug fix, or design problem) into either an actionable engineering plan or a set of solution options with pros and cons.
 argument-hint: Attach the draft and specify `plan` or `brainstorm`
 tools: ['search', 'read', 'vscode/memory', 'vscode/askQuestions', 'agent']
