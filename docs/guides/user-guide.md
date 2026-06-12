@@ -95,7 +95,7 @@ A mid-layer repo that both produces and consumes can have both roles.
 
 ## Commands
 
-All commands accept `--config` / `-c` to specify an alternative path to `repos.toml` (default: `repos.toml` in the working directory).
+All commands accept `--config` / `-c` to specify an alternative path to `repos.toml`. The path is resolved in this order: the `--config` flag, the `REPOMGR_CONFIG` environment variable, then `repos.toml` in the working directory.
 
 ---
 
@@ -220,7 +220,7 @@ repomgr stale-branches
 
 ## Troubleshooting
 
-**`Config file not found`** - Run commands from the directory that contains `repos.toml`, or pass `--config path/to/repos.toml`.
+**`Config file not found`** - Run commands from the directory that contains `repos.toml`, pass `--config path/to/repos.toml`, or set `REPOMGR_CONFIG=path/to/repos.toml`.
 
 **Repo is skipped during `update-deps`** - The most common reasons are: not on `main`, dirty working tree, or local `main` is behind remote. Run `repomgr status` to see which condition applies, then fix it manually.
 

@@ -13,6 +13,7 @@ import pytest
 from typer.testing import CliRunner
 
 from repomgr.cli import app
+from repomgr.config.repos_config import load_config
 from repomgr.update import UnknownRepoError
 
 # ---------------------------------------------------------------------------
@@ -260,3 +261,55 @@ class TestErrorPaths:
         bad_toml.write_text("[[repo]]\nname = 123\n")  # name must be a string
         result = runner.invoke(app, ["status", "--config", str(bad_toml)])
         assert result.exit_code == 1
+
+
+# ---------------------------------------------------------------------------
+# Config path resolution (env var)
+# ---------------------------------------------------------------------------
+
+
+class TestConfigEnvVar:
+    """Tests for resolving the config path via ``REPOMGR_CONFIG``."""
+
+    def test_env_var_used_when_no_flag(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """``REPOMGR_CONFIG`` supplies the config path when no flag is passed."""
+        toml = _write_toml(tmp_path)
+        with (
+            patch("repomgr.cli.deps_mod.build_dep_graph", return_value={"repo-a": []}),
+            patch("repomgr.cli.manager.status_all"),
+            patch("repomgr.cli.load_config", wraps=load_config) as mock_load,
+        ):
+            result = runner.invoke(
+                app,
+                ["status"],
+                env={"REPOMGR_CONFIG": str(toml)},
+            )
+
+        assert result.exit_code == 0
+        mock_load.assert_called_once_with(toml)
+
+    def test_flag_overrides_env_var(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """An explicit ``--config`` flag wins over ``REPOMGR_CONFIG``."""
+        flag_toml = _write_toml(tmp_path)
+        env_toml = tmp_path / "from-env.toml"
+        with (
+            patch("repomgr.cli.deps_mod.build_dep_graph", return_value={"repo-a": []}),
+            patch("repomgr.cli.manager.status_all"),
+            patch("repomgr.cli.load_config", wraps=load_config) as mock_load,
+        ):
+            result = runner.invoke(
+                app,
+                ["status", "--config", str(flag_toml)],
+                env={"REPOMGR_CONFIG": str(env_toml)},
+            )
+
+        assert result.exit_code == 0
+        mock_load.assert_called_once_with(flag_toml)

@@ -34,7 +34,8 @@ _CONFIG_OPTION = typer.Option(
     "repos.toml",
     "--config",
     "-c",
-    help="Path to repos.toml config file.",
+    envvar="REPOMGR_CONFIG",
+    help="Path to repos.toml. Defaults to $REPOMGR_CONFIG, then repos.toml.",
 )
 
 # ---------------------------------------------------------------------------

@@ -25,8 +25,9 @@ repomgr = "repomgr.cli:app"
 | `repomgr stale-branches` | `manager.stale_branches` |
 | `repomgr dep-graph` | `renderer.render_dep_graph` |
 
-All commands accept `--config` / `-c` to specify a custom path to `repos.toml`
-(default: `repos.toml` in the working directory).
+All commands accept `--config` / `-c` to specify a custom path to `repos.toml`.
+The path is resolved in this order: the `--config` flag, the `REPOMGR_CONFIG`
+environment variable, then `repos.toml` in the working directory.
 
 ## Startup sequence
 
@@ -44,7 +45,7 @@ Every command calls the shared `_load(config_path)` helper, which:
 repomgr update-deps [OPTIONS]
 
 Options:
-  --config    / -c         Path to repos.toml (default: repos.toml)
+  --config    / -c         Path to repos.toml (env: REPOMGR_CONFIG, default: repos.toml)
   --dry-run                Preview changes without writing
   --no-tests               Skip tests, merge unconditionally
   --repo / -r              Update only the named repo
