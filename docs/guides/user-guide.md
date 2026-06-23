@@ -97,6 +97,8 @@ A mid-layer repo that both produces and consumes can have both roles.
 
 All commands accept `--config` / `-c` to specify an alternative path to `repos.toml`. The path is resolved in this order: the `--config` flag, the `REPOMGR_CONFIG` environment variable, then `repos.toml` in the working directory.
 
+The global `--log-level` option sets logging verbosity for every command (default `INFO`). It is placed before the subcommand, e.g. `repomgr --log-level DEBUG status`. Accepted values: `TRACE`, `DEBUG`, `INFO`, `SUCCESS`, `WARNING`, `ERROR`, `CRITICAL` (case-insensitive).
+
 ---
 
 ### `repomgr status`

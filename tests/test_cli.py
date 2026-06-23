@@ -12,6 +12,7 @@ from unittest.mock import patch
 import pytest
 from typer.testing import CliRunner
 
+from repomgr.cli import LogLevel
 from repomgr.cli import app
 from repomgr.config.repos_config import load_config
 from repomgr.update import UnknownRepoError
@@ -313,3 +314,56 @@ class TestConfigEnvVar:
 
         assert result.exit_code == 0
         mock_load.assert_called_once_with(flag_toml)
+
+
+# ---------------------------------------------------------------------------
+# Log level
+# ---------------------------------------------------------------------------
+
+
+class TestLogLevel:
+    """Tests for the global ``--log-level`` option."""
+
+    def _run(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+        args: list[str],
+    ) -> tuple[int, object]:
+        """Invoke ``status`` with the given args, returning (exit_code, level)."""
+        toml = _write_toml(tmp_path)
+        with (
+            patch("repomgr.cli.deps_mod.build_dep_graph", return_value={"repo-a": []}),
+            patch("repomgr.cli.manager.status_all"),
+            patch("repomgr.cli._configure_logging") as mock_cfg,
+        ):
+            result = runner.invoke(app, [*args, "status", "--config", str(toml)])
+        level = mock_cfg.call_args.args[0] if mock_cfg.call_args else None
+        return result.exit_code, level
+
+    def test_default_level_is_info(self, runner: CliRunner, tmp_path: Path) -> None:
+        """No flag configures logging at INFO."""
+        exit_code, level = self._run(runner, tmp_path, [])
+        assert exit_code == 0
+        assert level == LogLevel.INFO
+
+    def test_explicit_level(self, runner: CliRunner, tmp_path: Path) -> None:
+        """``--log-level DEBUG`` configures logging at DEBUG."""
+        exit_code, level = self._run(runner, tmp_path, ["--log-level", "DEBUG"])
+        assert exit_code == 0
+        assert level == LogLevel.DEBUG
+
+    def test_level_is_case_insensitive(
+        self,
+        runner: CliRunner,
+        tmp_path: Path,
+    ) -> None:
+        """A lowercase level name is accepted."""
+        exit_code, level = self._run(runner, tmp_path, ["--log-level", "warning"])
+        assert exit_code == 0
+        assert level == LogLevel.WARNING
+
+    def test_invalid_level_exits(self, runner: CliRunner, tmp_path: Path) -> None:
+        """An unknown level name exits non-zero."""
+        exit_code, _level = self._run(runner, tmp_path, ["--log-level", "LOUD"])
+        assert exit_code != 0

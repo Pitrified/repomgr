@@ -29,6 +29,21 @@ All commands accept `--config` / `-c` to specify a custom path to `repos.toml`.
 The path is resolved in this order: the `--config` flag, the `REPOMGR_CONFIG`
 environment variable, then `repos.toml` in the working directory.
 
+## Global options
+
+`--log-level` is a global option handled by the app callback (`main`). It sets
+the loguru verbosity for the whole process and must be placed **before** the
+subcommand:
+
+```
+repomgr --log-level DEBUG status
+```
+
+Accepted values are the loguru levels `TRACE`, `DEBUG`, `INFO`, `SUCCESS`,
+`WARNING`, `ERROR`, `CRITICAL` (case-insensitive). The default is `INFO`. The
+callback calls `_configure_logging`, which resets loguru to a single `stderr`
+sink at the requested level.
+
 ## Startup sequence
 
 Every command calls the shared `_load(config_path)` helper, which:

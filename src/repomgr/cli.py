@@ -10,7 +10,9 @@ Pattern rules:
     reported cleanly before raising ``typer.Exit(code=1)``.
 """
 
+from enum import StrEnum
 from pathlib import Path
+import sys
 from typing import Annotated
 
 from loguru import logger as lg
@@ -25,6 +27,53 @@ from repomgr.config.repos_config import load_config
 from repomgr.state import StateStore
 
 app = typer.Typer(name="repomgr", help="Manage a fleet of Python repos.")
+
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
+
+
+class LogLevel(StrEnum):
+    """Loguru log levels accepted by the ``--log-level`` option."""
+
+    TRACE = "TRACE"
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    SUCCESS = "SUCCESS"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
+
+
+def _configure_logging(level: LogLevel) -> None:
+    """Reset loguru to a single stderr sink at the given level.
+
+    Args:
+        level: Minimum level for emitted log records.
+    """
+    lg.remove()
+    lg.add(sys.stderr, level=level.value)
+
+
+# ---------------------------------------------------------------------------
+# App callback
+# ---------------------------------------------------------------------------
+
+
+@app.callback()
+def main(
+    log_level: Annotated[
+        LogLevel,
+        typer.Option(
+            "--log-level",
+            help="Logging verbosity for all commands.",
+            case_sensitive=False,
+        ),
+    ] = LogLevel.INFO,
+) -> None:
+    """Manage a fleet of Python repos."""
+    _configure_logging(log_level)
+
 
 # ---------------------------------------------------------------------------
 # Shared option default
