@@ -27,7 +27,7 @@ decisions in [`00-start.md`](00-start.md).
 | 1  | Schema + load_config + config tests    | [`01_schema.md`](01_schema.md)    | done    |
 | 2  | Sweep `remote` consumers + fixtures    | [`02_consumers.md`](02_consumers.md) | done    |
 | 3  | Update `repos.toml.example` + docs      | [`03_docs.md`](03_docs.md)        | done    |
-| 4  | Migrate live linux-box config           | [`04_migrate.md`](04_migrate.md)  | draft   |
+| 4  | Migrate live linux-box config           | [`04_migrate.md`](04_migrate.md)  | done    |
 
 Status values: draft / planned / in progress / done / superseded / discarded.
 
@@ -63,3 +63,11 @@ Append-only. Newest at the bottom.
   git-dep URLs alone. Found and fixed stray `remote =` references the plan had
   not anticipated in getting-started/user-guide (only repos_config.md + example
   were in the original phase-3 scope).
+- 2026-06-25 : phase 4 done. Migrated the live config
+  `~/repos/linux-box-cloudflare/configs/repomgr/repos.toml` to the new schema
+  (global owner/host/transport, removed 28 remote lines, repo_name on
+  convo_craft, kept recipamatic test_cmd). Verified derived URLs identical to
+  the old values via load_config, then ran `repomgr status` / `dep-graph` /
+  `clone-missing` against it - all clean (status shows 28 repos + dep graph;
+  clone-missing a no-op as all repos are on disk). The sibling repo's commit is
+  left to the user. All four phases complete.
