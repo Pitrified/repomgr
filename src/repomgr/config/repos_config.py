@@ -41,6 +41,28 @@ class Role(StrEnum):
     CONSUMER = "consumer"
 
 
+class Transport(StrEnum):
+    """Git transport used to build a repo's clone URL.
+
+    Attributes:
+        SSH: ``git@<host>:<owner>/<repo>.git``.
+        HTTPS: ``https://<host>/<owner>/<repo>.git``.
+    """
+
+    SSH = "ssh"
+    HTTPS = "https"
+
+
+class OwnerNotResolvedError(ValueError):
+    """Raised when a repo has no ``owner`` and ``[settings].owner`` is unset."""
+
+    def __init__(self, repo_name: str) -> None:
+        """Build the error message naming the offending repo."""
+        super().__init__(
+            f"repo {repo_name!r} has no 'owner' and [settings].owner is not set"
+        )
+
+
 class Settings(BaseModel):
     """Global settings block from ``repos.toml``.
 
@@ -53,11 +75,23 @@ class Settings(BaseModel):
         state_file:
             Path to the JSON state file.  When relative it is resolved
             against the TOML file's parent directory inside ``load_config()``.
+        owner:
+            Default repo owner/org applied to every repo that does not set its
+            own ``owner``.  Optional; a repo with no owner here or per-repo is
+            an error (see ``OwnerNotResolvedError``).
+        host:
+            Git host used when building clone URLs.  Defaults to ``github.com``.
+        transport:
+            Git transport (``ssh`` or ``https``) used when building clone URLs.
+            Defaults to ``ssh``.
     """
 
     base_path: Path = Path("~/repos").expanduser()
     default_test_cmd: str = "uv run pytest"
     state_file: Path = Field(default=Path("./repos.state.json"))
+    owner: str | None = None
+    host: str = "github.com"
+    transport: Transport = Transport.SSH
 
     @field_validator("base_path", mode="before")
     @classmethod
@@ -75,9 +109,20 @@ class RepoConfig(BaseModel):
 
     Attributes:
         name:
-            Unique short name for the repo.
-        remote:
-            Git remote URL (SSH or HTTPS).
+            Unique short name for the repo.  Also the default local clone
+            directory name and the default remote repo name.
+        owner:
+            Repo owner/org on the host.  Resolved by ``load_config()`` from a
+            per-repo override or the global ``settings.owner``.
+        repo_name:
+            Remote repo name, when it differs from ``name``.  When ``None`` the
+            clone URL falls back to ``name``.
+        host:
+            Git host used to build ``remote``.  Resolved by ``load_config()``
+            from ``settings.host``.
+        transport:
+            Git transport used to build ``remote``.  Resolved by
+            ``load_config()`` from ``settings.transport``.
         roles:
             One or more roles: ``source`` and/or ``consumer``.
         auto_merge:
@@ -91,10 +136,16 @@ class RepoConfig(BaseModel):
         deps:
             Git-sourced dependency names.  Left empty here; populated later
             by ``deps.py`` during startup.
+        remote:
+            Computed git clone URL, derived from ``transport``, ``host``,
+            ``owner`` and ``repo_name`` (or ``name``).
     """
 
     name: str
-    remote: str
+    owner: str
+    repo_name: str | None = None
+    host: str = "github.com"
+    transport: Transport = Transport.SSH
     roles: list[Role]
     auto_merge: bool = False
     test_cmd: str
@@ -108,6 +159,15 @@ class RepoConfig(BaseModel):
             msg = "repo name must not be empty"
             raise ValueError(msg)
         return v
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def remote(self) -> str:
+        """Build the git clone URL from the resolved identity fields."""
+        repo = self.repo_name or self.name
+        if self.transport is Transport.SSH:
+            return f"git@{self.host}:{self.owner}/{repo}.git"
+        return f"https://{self.host}/{self.owner}/{repo}.git"
 
     @field_validator("roles")
     @classmethod
@@ -164,6 +224,10 @@ def load_config(path: Path) -> RepomgrTomlConfig:
     - ``repo.path``: explicit ``path`` override (tilde-expanded) or
       ``settings.base_path / name``.
     - ``repo.test_cmd``: per-repo override or ``settings.default_test_cmd``.
+    - ``repo.owner``: per-repo override or ``settings.owner``; an unresolvable
+      owner raises ``OwnerNotResolvedError``.
+    - ``repo.host`` / ``repo.transport``: copied from ``settings`` so each
+      repo's computed ``remote`` URL is self-contained.
 
     Args:
         path: Path to the ``repos.toml`` file.
@@ -175,6 +239,8 @@ def load_config(path: Path) -> RepomgrTomlConfig:
         FileNotFoundError: If the TOML file does not exist.
         tomllib.TOMLDecodeError: If the file content is not valid TOML.
         pydantic.ValidationError: If the content does not match the schema.
+        OwnerNotResolvedError: If a repo has no owner and ``settings.owner``
+            is unset.
     """
     if not path.exists():
         msg = f"config file not found: {path}"
@@ -200,8 +266,21 @@ def load_config(path: Path) -> RepomgrTomlConfig:
 
         test_cmd: str = repo_raw.get("test_cmd", settings.default_test_cmd)
 
+        owner = repo_raw.get("owner", settings.owner)
+        if owner is None:
+            raise OwnerNotResolvedError(repo_raw.get("name", ""))
+
         repos.append(
-            RepoConfig(**{**repo_raw, "path": resolved_path, "test_cmd": test_cmd})
+            RepoConfig(
+                **{
+                    **repo_raw,
+                    "owner": owner,
+                    "host": settings.host,
+                    "transport": settings.transport,
+                    "path": resolved_path,
+                    "test_cmd": test_cmd,
+                }
+            )
         )
 
     return RepomgrTomlConfig(settings=settings, repos=repos)

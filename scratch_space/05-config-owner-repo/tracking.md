@@ -24,7 +24,7 @@ decisions in [`00-start.md`](00-start.md).
 
 | #  | Phase                                  | Plan                              | Status  |
 | -- | -------------------------------------- | --------------------------------- | ------- |
-| 1  | Schema + load_config + config tests    | [`01_schema.md`](01_schema.md)    | planned |
+| 1  | Schema + load_config + config tests    | [`01_schema.md`](01_schema.md)    | done    |
 | 2  | Sweep `remote` consumers + fixtures    | [`02_consumers.md`](02_consumers.md) | draft   |
 | 3  | Update `repos.toml.example` + docs      | [`03_docs.md`](03_docs.md)        | draft   |
 | 4  | Migrate live linux-box config           | [`04_migrate.md`](04_migrate.md)  | draft   |
@@ -39,3 +39,12 @@ Append-only. Newest at the bottom.
   `feat/config-owner-repo` created, brainstorm committed (79fcb08).
 - 2026-06-25 : added tracking.md and fleshed out phase 1 (`01_schema.md`);
   phases 2-4 stubbed as draft.
+- 2026-06-25 : phase 1 done. `repos_config.py`: added `Transport` enum and
+  `OwnerNotResolvedError`; `Settings` gained `owner`/`host`/`transport`;
+  `RepoConfig` dropped the `remote` field for `owner`/`repo_name`/`host`/
+  `transport` with `remote` as a computed property; `load_config()` resolves
+  owner (repo->global) and copies host/transport per repo. Rewrote
+  `tests/config/test_repos_config.py` (29 pass), ruff clean. Confirmed the
+  phase-2 worklist by running the full suite: failures isolated to
+  `test_cli`, `test_deps`, `test_health`, `test_manager`, `test_update`
+  (all `remote=` fixture/construction references, as predicted).

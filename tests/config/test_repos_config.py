@@ -7,10 +7,12 @@ import tomllib
 from pydantic import ValidationError
 import pytest
 
+from repomgr.config.repos_config import OwnerNotResolvedError
 from repomgr.config.repos_config import RepoConfig
 from repomgr.config.repos_config import RepomgrTomlConfig
 from repomgr.config.repos_config import Role
 from repomgr.config.repos_config import Settings
+from repomgr.config.repos_config import Transport
 from repomgr.config.repos_config import load_config
 
 
@@ -33,7 +35,7 @@ def test_load_minimal_config(tmp_path: Path) -> None:
         """
         [[repo]]
         name   = "myrepo"
-        remote = "git@github.com:user/myrepo.git"
+        owner  = "user"
         roles  = ["source"]
         """,
     )
@@ -43,6 +45,8 @@ def test_load_minimal_config(tmp_path: Path) -> None:
     assert len(cfg.repos) == 1
     repo = cfg.repos[0]
     assert repo.name == "myrepo"
+    assert repo.owner == "user"
+    assert repo.transport is Transport.SSH
     assert repo.remote == "git@github.com:user/myrepo.git"
     assert repo.roles == [Role.SOURCE]
     assert repo.auto_merge is False
@@ -60,10 +64,13 @@ def test_load_full_config(tmp_path: Path) -> None:
         base_path        = "/srv/repos"
         default_test_cmd = "make test"
         state_file       = "{state_file}"
+        owner            = "globalowner"
+        host             = "git.example.com"
+        transport        = "https"
 
         [[repo]]
         name       = "lib-a"
-        remote     = "git@github.com:user/lib-a.git"
+        owner      = "user"
         roles      = ["source", "consumer"]
         auto_merge = true
         test_cmd   = "pytest -x"
@@ -76,12 +83,17 @@ def test_load_full_config(tmp_path: Path) -> None:
     assert cfg.settings.base_path == Path("/srv/repos")
     assert cfg.settings.default_test_cmd == "make test"
     assert cfg.settings.state_file == state_file
+    assert cfg.settings.owner == "globalowner"
+    assert cfg.settings.host == "git.example.com"
+    assert cfg.settings.transport is Transport.HTTPS
 
     repo = cfg.repos[0]
     assert repo.roles == [Role.SOURCE, Role.CONSUMER]
     assert repo.auto_merge is True
     assert repo.test_cmd == "pytest -x"
     assert repo.path == Path("/custom/lib-a")
+    # per-repo owner overrides global; host/transport come from settings
+    assert repo.remote == "https://git.example.com/user/lib-a.git"
 
 
 def test_path_resolution_default(tmp_path: Path) -> None:
@@ -94,7 +106,7 @@ def test_path_resolution_default(tmp_path: Path) -> None:
 
         [[repo]]
         name   = "myrepo"
-        remote = "git@github.com:user/myrepo.git"
+        owner  = "user"
         roles  = ["source"]
         """,
     )
@@ -114,7 +126,7 @@ def test_path_resolution_explicit_override(tmp_path: Path) -> None:
 
         [[repo]]
         name   = "myrepo"
-        remote = "git@github.com:user/myrepo.git"
+        owner  = "user"
         roles  = ["source"]
         path   = "/projects/myrepo"
         """,
@@ -132,7 +144,7 @@ def test_path_resolution_tilde_expansion(tmp_path: Path) -> None:
         """
         [[repo]]
         name   = "myrepo"
-        remote = "git@github.com:user/myrepo.git"
+        owner  = "user"
         roles  = ["source"]
         path   = "~/projects/myrepo"
         """,
@@ -189,16 +201,15 @@ def test_test_cmd_per_repo_override(tmp_path: Path) -> None:
         """
         [settings]
         default_test_cmd = "make test"
+        owner            = "user"
 
         [[repo]]
         name     = "repo-a"
-        remote   = "git@github.com:user/repo-a.git"
         roles    = ["source"]
         test_cmd = "pytest -x"
 
         [[repo]]
         name   = "repo-b"
-        remote = "git@github.com:user/repo-b.git"
         roles  = ["source"]
         """,
     )
@@ -214,14 +225,15 @@ def test_repos_by_name(tmp_path: Path) -> None:
     toml_path = _write_toml(
         tmp_path,
         """
+        [settings]
+        owner = "user"
+
         [[repo]]
         name   = "repo-a"
-        remote = "git@github.com:user/repo-a.git"
         roles  = ["source"]
 
         [[repo]]
         name   = "repo-b"
-        remote = "git@github.com:user/repo-b.git"
         roles  = ["consumer"]
         """,
     )
@@ -238,19 +250,19 @@ def test_multiple_repos(tmp_path: Path) -> None:
     toml_path = _write_toml(
         tmp_path,
         """
+        [settings]
+        owner = "u"
+
         [[repo]]
         name   = "a"
-        remote = "git@github.com:u/a.git"
         roles  = ["source"]
 
         [[repo]]
         name   = "b"
-        remote = "git@github.com:u/b.git"
         roles  = ["consumer"]
 
         [[repo]]
         name   = "c"
-        remote = "git@github.com:u/c.git"
         roles  = ["source", "consumer"]
         """,
     )
@@ -258,6 +270,114 @@ def test_multiple_repos(tmp_path: Path) -> None:
     cfg = load_config(toml_path)
 
     assert len(cfg.repos) == 3
+
+
+# ---------------------------------------------------------------------------
+# load_config - remote URL derivation
+# ---------------------------------------------------------------------------
+
+
+def test_remote_derived_ssh(tmp_path: Path) -> None:
+    """Default transport (ssh) builds an SSH clone URL."""
+    toml_path = _write_toml(
+        tmp_path,
+        """
+        [settings]
+        owner = "Pitrified"
+
+        [[repo]]
+        name  = "llm-core"
+        roles = ["source"]
+        """,
+    )
+
+    cfg = load_config(toml_path)
+
+    assert cfg.repos[0].remote == "git@github.com:Pitrified/llm-core.git"
+
+
+def test_remote_derived_https(tmp_path: Path) -> None:
+    """HTTPS transport builds an HTTPS clone URL."""
+    toml_path = _write_toml(
+        tmp_path,
+        """
+        [settings]
+        owner     = "Pitrified"
+        transport = "https"
+
+        [[repo]]
+        name  = "llm-core"
+        roles = ["source"]
+        """,
+    )
+
+    cfg = load_config(toml_path)
+
+    assert cfg.repos[0].remote == "https://github.com/Pitrified/llm-core.git"
+
+
+def test_repo_name_override(tmp_path: Path) -> None:
+    """repo_name appears in the URL while path still uses name."""
+    toml_path = _write_toml(
+        tmp_path,
+        """
+        [settings]
+        base_path = "/srv/repos"
+        owner     = "Pitrified"
+
+        [[repo]]
+        name      = "convo_craft"
+        repo_name = "convo-craft"
+        roles     = ["consumer"]
+        """,
+    )
+
+    cfg = load_config(toml_path)
+
+    repo = cfg.repos[0]
+    assert repo.remote == "git@github.com:Pitrified/convo-craft.git"
+    assert repo.path == Path("/srv/repos/convo_craft")
+
+
+def test_owner_global_default(tmp_path: Path) -> None:
+    """A repo with no owner inherits settings.owner."""
+    toml_path = _write_toml(
+        tmp_path,
+        """
+        [settings]
+        owner = "globalowner"
+
+        [[repo]]
+        name  = "myrepo"
+        roles = ["source"]
+        """,
+    )
+
+    cfg = load_config(toml_path)
+
+    assert cfg.repos[0].owner == "globalowner"
+    assert cfg.repos[0].remote == "git@github.com:globalowner/myrepo.git"
+
+
+def test_owner_per_repo_override(tmp_path: Path) -> None:
+    """A per-repo owner beats the global default."""
+    toml_path = _write_toml(
+        tmp_path,
+        """
+        [settings]
+        owner = "globalowner"
+
+        [[repo]]
+        name  = "myrepo"
+        owner = "repoowner"
+        roles = ["source"]
+        """,
+    )
+
+    cfg = load_config(toml_path)
+
+    assert cfg.repos[0].owner == "repoowner"
+    assert cfg.repos[0].remote == "git@github.com:repoowner/myrepo.git"
 
 
 # ---------------------------------------------------------------------------
@@ -280,20 +400,55 @@ def test_invalid_toml_raises(tmp_path: Path) -> None:
         load_config(bad)
 
 
+def test_owner_missing_raises(tmp_path: Path) -> None:
+    """OwnerNotResolvedError when no per-repo owner and no global owner."""
+    toml_path = _write_toml(
+        tmp_path,
+        """
+        [[repo]]
+        name  = "myrepo"
+        roles = ["source"]
+        """,
+    )
+
+    with pytest.raises(OwnerNotResolvedError, match="myrepo"):
+        load_config(toml_path)
+
+
+def test_transport_invalid_raises(tmp_path: Path) -> None:
+    """An unknown transport value fails validation."""
+    toml_path = _write_toml(
+        tmp_path,
+        """
+        [settings]
+        owner     = "user"
+        transport = "ftp"
+
+        [[repo]]
+        name  = "myrepo"
+        roles = ["source"]
+        """,
+    )
+
+    with pytest.raises(ValidationError):
+        load_config(toml_path)
+
+
 def test_duplicate_repo_names_raises(tmp_path: Path) -> None:
     """ValidationError is raised when two repos share the same name."""
     toml_path = _write_toml(
         tmp_path,
         """
-        [[repo]]
-        name   = "myrepo"
-        remote = "git@github.com:user/myrepo.git"
-        roles  = ["source"]
+        [settings]
+        owner = "user"
 
         [[repo]]
-        name   = "myrepo"
-        remote = "git@github.com:user/myrepo2.git"
-        roles  = ["consumer"]
+        name  = "myrepo"
+        roles = ["source"]
+
+        [[repo]]
+        name  = "myrepo"
+        roles = ["consumer"]
         """,
     )
 
@@ -307,9 +462,9 @@ def test_empty_roles_raises(tmp_path: Path) -> None:
         tmp_path,
         """
         [[repo]]
-        name   = "myrepo"
-        remote = "git@github.com:user/myrepo.git"
-        roles  = []
+        name  = "myrepo"
+        owner = "user"
+        roles = []
         """,
     )
 
@@ -323,9 +478,9 @@ def test_empty_name_raises(tmp_path: Path) -> None:
         tmp_path,
         """
         [[repo]]
-        name   = ""
-        remote = "git@github.com:user/myrepo.git"
-        roles  = ["source"]
+        name  = ""
+        owner = "user"
+        roles = ["source"]
         """,
     )
 
@@ -344,11 +499,20 @@ def test_role_enum_values() -> None:
     assert Role.CONSUMER == "consumer"
 
 
+def test_transport_enum_values() -> None:
+    """Transport enum has the expected string values."""
+    assert Transport.SSH == "ssh"
+    assert Transport.HTTPS == "https"
+
+
 def test_settings_defaults() -> None:
     """Settings defaults are applied when no values are provided."""
     s = Settings()
     assert s.default_test_cmd == "uv run pytest"
     assert not str(s.base_path).startswith("~")
+    assert s.owner is None
+    assert s.host == "github.com"
+    assert s.transport is Transport.SSH
 
 
 def test_settings_base_path_tilde_expansion() -> None:
@@ -367,9 +531,10 @@ def test_repo_config_path_tilde_expanded(tmp_path: Path) -> None:
     """RepoConfig path field expands tilde on construction."""
     repo = RepoConfig(
         name="x",
-        remote="git@github.com:u/x.git",
+        owner="u",
         roles=[Role.SOURCE],
         test_cmd="uv run pytest",
         path=Path("~/repos/x"),
     )
     assert not str(repo.path).startswith("~")
+    assert repo.remote == "git@github.com:u/x.git"
