@@ -42,7 +42,7 @@ def _make_repo(
         path.mkdir(parents=True, exist_ok=True)
     return RepoConfig(
         name=name,
-        remote=f"git@github.com:user/{name}.git",
+        owner="user",
         roles=roles or [Role.SOURCE],
         auto_merge=auto_merge,
         test_cmd="uv run pytest",

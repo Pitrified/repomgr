@@ -19,7 +19,7 @@ from repomgr.state import RepoState
 def _make_config(*, auto_merge: bool = False) -> RepoConfig:
     return RepoConfig(
         name="my-repo",
-        remote="git@github.com:user/my-repo.git",
+        owner="user",
         roles=[Role.SOURCE],
         auto_merge=auto_merge,
         test_cmd="uv run pytest",

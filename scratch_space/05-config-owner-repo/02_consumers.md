@@ -1,5 +1,5 @@
 ---
-status: draft
+status: done
 ---
 
 # Phase 2 - Sweep `remote` consumers + fixtures

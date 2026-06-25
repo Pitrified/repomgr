@@ -33,7 +33,7 @@ def _write_toml(tmp_path: Path, content: str = "") -> Path:
     default = """
         [[repo]]
         name   = "repo-a"
-        remote = "git@github.com:user/repo-a.git"
+        owner  = "user"
         roles  = ["source"]
     """
     p = tmp_path / "repos.toml"

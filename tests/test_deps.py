@@ -42,7 +42,7 @@ def _make_pyproject(tmp_path: Path, deps: list[str]) -> Path:
 def _make_config(name: str, path: Path | None = None) -> RepoConfig:
     return RepoConfig(
         name=name,
-        remote=f"git@github.com:Pitrified/{name}.git",
+        owner="Pitrified",
         roles=[Role.SOURCE],
         test_cmd="uv run pytest",
         path=path or Path(f"/srv/repos/{name}"),

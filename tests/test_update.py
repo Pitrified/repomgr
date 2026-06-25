@@ -41,7 +41,7 @@ def _make_repo(
             (path / "pyproject.toml").write_text('[project]\nname = "test"\n')
     return RepoConfig(
         name=name,
-        remote=f"git@github.com:user/{name}.git",
+        owner="user",
         roles=roles or [Role.CONSUMER],
         auto_merge=False,
         test_cmd="uv run pytest",

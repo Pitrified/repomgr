@@ -25,7 +25,7 @@ decisions in [`00-start.md`](00-start.md).
 | #  | Phase                                  | Plan                              | Status  |
 | -- | -------------------------------------- | --------------------------------- | ------- |
 | 1  | Schema + load_config + config tests    | [`01_schema.md`](01_schema.md)    | done    |
-| 2  | Sweep `remote` consumers + fixtures    | [`02_consumers.md`](02_consumers.md) | draft   |
+| 2  | Sweep `remote` consumers + fixtures    | [`02_consumers.md`](02_consumers.md) | done    |
 | 3  | Update `repos.toml.example` + docs      | [`03_docs.md`](03_docs.md)        | draft   |
 | 4  | Migrate live linux-box config           | [`04_migrate.md`](04_migrate.md)  | draft   |
 
@@ -48,3 +48,9 @@ Append-only. Newest at the bottom.
   phase-2 worklist by running the full suite: failures isolated to
   `test_cli`, `test_deps`, `test_health`, `test_manager`, `test_update`
   (all `remote=` fixture/construction references, as predicted).
+- 2026-06-25 : phase 2 done. Replaced `remote=` with `owner=` in the
+  `RepoConfig` constructions/fixtures of `test_health`, `test_deps`,
+  `test_manager`, `test_update` and the TOML fixture in `test_cli`. No `src/`
+  change needed - `manager.py` `repo.remote` resolves via the computed
+  property, and `test_manager.py:225`'s `clone_mock` assertion still matches
+  the derived URL. Full suite green: 209 passed, ruff clean.
