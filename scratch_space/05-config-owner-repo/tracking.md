@@ -26,7 +26,7 @@ decisions in [`00-start.md`](00-start.md).
 | -- | -------------------------------------- | --------------------------------- | ------- |
 | 1  | Schema + load_config + config tests    | [`01_schema.md`](01_schema.md)    | done    |
 | 2  | Sweep `remote` consumers + fixtures    | [`02_consumers.md`](02_consumers.md) | done    |
-| 3  | Update `repos.toml.example` + docs      | [`03_docs.md`](03_docs.md)        | draft   |
+| 3  | Update `repos.toml.example` + docs      | [`03_docs.md`](03_docs.md)        | done    |
 | 4  | Migrate live linux-box config           | [`04_migrate.md`](04_migrate.md)  | draft   |
 
 Status values: draft / planned / in progress / done / superseded / discarded.
@@ -54,3 +54,12 @@ Append-only. Newest at the bottom.
   change needed - `manager.py` `repo.remote` resolves via the computed
   property, and `test_manager.py:225`'s `clone_mock` assertion still matches
   the derived URL. Full suite green: 209 passed, ruff clean.
+- 2026-06-25 : phase 3 done. Updated `repos.toml.example` (owner/host/transport
+  in [settings], dropped per-repo remote, added repo_name + per-repo owner
+  examples) and verified it loads via `load_config` (5 URLs correct). Updated
+  `docs/library/repos_config.md` (Transport section + https-auth warning,
+  tables, resolution order, raises), plus the toml examples/tables in
+  `docs/getting-started.md` and `docs/guides/user-guide.md`. Left deps.md
+  git-dep URLs alone. Found and fixed stray `remote =` references the plan had
+  not anticipated in getting-started/user-guide (only repos_config.md + example
+  were in the original phase-3 scope).

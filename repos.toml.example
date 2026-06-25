@@ -22,18 +22,34 @@ default_test_cmd = "uv run pytest"
 # relative to the directory that contains this repos.toml file.
 state_file = "./repos.state.json"
 
+# Default owner/org for every repo. A repo may override this with its own
+# `owner`. A repo with no owner here or per-repo is an error.
+owner = "you"
+
+# Git host and transport used to build each repo's clone URL.
+# transport is "ssh" (default) or "https".
+#   ssh:   git@<host>:<owner>/<repo>.git
+#   https: https://<host>/<owner>/<repo>.git
+# NOTE: transport = "https" only changes the URL shape - it does NOT provide
+# authentication. Private repos over HTTPS still need a token or a configured
+# git credential helper. SSH uses your existing keys.
+host      = "github.com"
+transport = "ssh"
+
 
 # ---------------------------------------------------------------------------
 # [[repo]] - one entry per tracked repository
 # ---------------------------------------------------------------------------
-# Required fields: name, remote, roles
-# Optional: auto_merge, path, test_cmd
+# Required fields: name, roles
+# Optional: owner (overrides settings.owner), repo_name (remote name when it
+#           differs from name), auto_merge, path, test_cmd
+# The clone URL is derived from transport/host/owner/repo_name - never set a
+# remote URL directly.
 
 # --- Source repo: produces versioned tags consumed by others ---------------
 
 [[repo]]
-name   = "my-lib"
-remote = "git@github.com:you/my-lib.git"
+name = "my-lib"
 
 # "source" means this repo is a dependency of others.
 # "consumer" means this repo depends on other tracked repos via git deps.
@@ -49,29 +65,35 @@ auto_merge = true
 # --- Consumer repo: depends on my-lib via a git-sourced dep ----------------
 
 [[repo]]
-name   = "my-app"
-remote = "git@github.com:you/my-app.git"
-roles  = ["consumer"]
+name  = "my-app"
+roles = ["consumer"]
 
 # Per-repo test command overrides default_test_cmd.
 test_cmd = "uv run pytest -x --tb=short"
 
 
-# --- Repo with an explicit local path override -----------------------------
+# --- Repo whose remote name differs from its local name --------------------
 
 [[repo]]
-name   = "legacy-service"
-remote = "git@github.com:you/legacy-service.git"
-roles  = ["consumer"]
+name      = "convo_craft"
+repo_name = "convo-craft"   # clones git@github.com:you/convo-craft.git into base_path/convo_craft
+roles     = ["consumer"]
+
+
+# --- Repo with an explicit local path and a different owner ----------------
+
+[[repo]]
+name  = "legacy-service"
+owner = "another-org"       # overrides settings.owner for this repo only
+roles = ["consumer"]
 
 # Set path when the clone lives outside base_path, or under a different name.
-path   = "~/projects/legacy"
+path  = "~/projects/legacy"
 
 
 # --- Source + consumer: contributes to others and has its own git deps -----
 
 [[repo]]
-name   = "mid-layer"
-remote = "git@github.com:you/mid-layer.git"
-roles  = ["source", "consumer"]
+name  = "mid-layer"
+roles = ["source", "consumer"]
 auto_merge = true

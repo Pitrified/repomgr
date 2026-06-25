@@ -43,13 +43,17 @@ Create `repos.toml` next to the installed package (see `scratch_space/vibes/09-r
 base_path        = "~/repos"
 default_test_cmd = "uv run pytest"
 state_file       = "./repos.state.json"
+owner            = "you"          # default owner for every repo
+transport        = "ssh"          # or "https"
 
 [[repo]]
 name       = "my-lib"
-remote     = "git@github.com:you/my-lib.git"
 roles      = ["source"]
 auto_merge = true
 ```
+
+repomgr derives each clone URL from `transport`/`host`/`owner` and the repo
+`name` - you do not set a remote URL directly.
 
 ### 5. Verify Installation
 

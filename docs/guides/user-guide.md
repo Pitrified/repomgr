@@ -34,18 +34,21 @@ The file has two sections: a global `[settings]` block and one `[[repo]]` entry 
 base_path        = "~/repos"
 default_test_cmd = "uv run pytest"
 state_file       = "./repos.state.json"
+owner            = "you"          # default owner for every repo
+transport        = "ssh"          # or "https"
 
 [[repo]]
 name   = "my-lib"
-remote = "git@github.com:you/my-lib.git"
 roles  = ["source"]
 auto_merge = true
 
 [[repo]]
 name   = "my-app"
-remote = "git@github.com:you/my-app.git"
 roles  = ["consumer"]
 ```
+
+The clone URL is derived from `transport`/`host`/`owner` and the repo `name`;
+there is no `remote` URL field.
 
 See [repos.toml.example](https://github.com/Pitrified/repomgr/blob/main/repos.toml.example) for a fully annotated reference.
 
@@ -72,17 +75,24 @@ repomgr status
 | `base_path` | `~/repos` | Root directory for clones. Each repo lands at `base_path/<name>` unless overridden. |
 | `default_test_cmd` | `uv run pytest` | Test command used when a repo does not define `test_cmd`. |
 | `state_file` | `./repos.state.json` | Path to the generated state file. Relative paths are resolved from the directory containing `repos.toml`. |
+| `owner` | none | Default repo owner/org applied to every repo without its own `owner`. |
+| `host` | `github.com` | Git host used to build clone URLs. |
+| `transport` | `ssh` | Git transport (`ssh` or `https`) used to build clone URLs. HTTPS does not authenticate on its own - see the library reference. |
 
 ### [[repo]]
 
 | Key | Required | Description |
 |-----|----------|-------------|
 | `name` | yes | Unique short identifier - used in commands and the dep graph. |
-| `remote` | yes | Git remote URL (SSH or HTTPS). |
+| `owner` | resolved | Per-repo override or `settings.owner`. An unresolvable owner is an error. |
+| `repo_name` | no | Remote repo name when it differs from `name`. Defaults to `name`. |
 | `roles` | yes | `["source"]`, `["consumer"]`, or `["source", "consumer"]`. |
 | `auto_merge` | no | `true` to fast-forward merge and push after a successful dep update. Default `false`. |
 | `path` | no | Explicit clone location. Defaults to `base_path/name`. |
 | `test_cmd` | no | Per-repo test command. Defaults to `settings.default_test_cmd`. |
+
+The clone URL (`remote`) is computed from `transport`/`host`/`owner`/`repo_name`
+and is read-only - there is no `remote` field to set.
 
 **Roles** control how repomgr treats each repo:
 
